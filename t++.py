@@ -331,10 +331,10 @@ class TppVisualizer:
             self.do_header(self.header_text)
         elif re.match('^--title ', line):
             title = line[8:].strip()
-            self.do_footer(title)
+            self.do_title(title)
         elif re.match('^--author ', line):
             title = line[9:].strip()
-            self.do_footer(title)
+            self.do_author(title)
         elif re.match('^--date ', line):
             date = line[7:].strip()
             if date == 'today':
@@ -533,7 +533,7 @@ class NcursesVisualizer(TppVisualizer):
     def __init__(self, outputfile):
         self.figletfont = 'standard'
         self.lines = [[]]
-        self.footer = urwid.AttrMap(urwid.Text('Footer'), '')
+        self.footer = urwid.AttrMap(urwid.Text(''), '')
         self.page_number = 0
         self.cur_page = 0
 
@@ -541,9 +541,13 @@ class NcursesVisualizer(TppVisualizer):
     def keyboard_input(self, input):
         if input in ('q', 'Q'):
             raise urwid.ExitMainLoop()
-        elif input is 'space':
+        elif input is ' ':
             self.cur_page += 1
-            self.content = urwid.Filler(content[self.cur_page])
+            self.content = urwid.Pile(('weight', 1, self.pages[self.cur_page]))
+            self.frame.set_body(self.content)
+            self.footer = urwid.AttrMap(urwid.Text('Slide [%s/%s]' % ((self.cur_page + 1), len(self.pages))), '')
+            self.frame.set_footer(self.footer)
+            self.loop.draw_screen()
 
     def do_footer(self, footer_text):
         pass
@@ -631,7 +635,7 @@ class NcursesVisualizer(TppVisualizer):
         pass
 
     def print_line(self, line):
-        self.lines[self.page_number].append(line)
+        self.lines[self.page_number].append(('weight', 1, urwid.Text(line)))
 
     def do_center(self, text):
         pass
@@ -640,16 +644,13 @@ class NcursesVisualizer(TppVisualizer):
         pass
 
     def do_title(self, title):
-        print 'Titre'
-        self.lines[self.page_number].append('Titre : %s' % title)
+        self.lines[self.page_number].append(('weight', 1, urwid.Text(u'Titre : %s' % title)))
 
     def do_author(self, author):
-        print 'Auteur'
-        self.lines[self.page_number].append('Auteur : %s' % author)
+        self.lines[self.page_number].append(('weight', 1, urwid.Text(u'Auteur : %s' % author)))
 
     def do_date(self, date):
-        print 'Date'
-        self.lines[self.page_number].append('Date : %s' % date)
+        self.lines[self.page_number].append(('weight', 1, urwid.Text(u'Date : %s' % date)))
 
     def do_bgcolor(self, color):
         pass
@@ -662,17 +663,22 @@ class NcursesVisualizer(TppVisualizer):
 
     def close(self):
         page_number = 0
-        content = []
-        for page in self.lines:
-            content.append(urwid.Text('\n'.join(page)))
+        self.pages = []
+        #for page in self.lines:
+        #    self.pages.append(urwid.Text('\n'.join(page)))
+        self.pages = self.lines
+        #print self.pages
         palette = [('body', 'white', 'black', 'standout'),
                    ('footer', 'black', 'light gray'),
                   ]
-        self.content = urwid.Filler(content[0])
+        self.content = urwid.Pile(self.pages[0])
+        print self.content.sizing()
+        self.footer = urwid.AttrMap(urwid.Text('Slide [1/%s]' % len(self.pages)), '')
+ 
         self.frame = urwid.Frame(self.content, footer=self.footer)
         self.box = urwid.LineBox(self.frame)
         self.loop = urwid.MainLoop(self.box, palette, unhandled_input=self.keyboard_input)
-        self.loop.run()
+        #self.loop.run()
 
 class TppController:
     """Implements a generic controller from which all other controllers need to be derived."""

@@ -39,7 +39,8 @@ class FileParser:
                 cur_page = Page(name)
             else:
                 cur_page.add_line(line)
-        self.pages.append(cur_page)
+        if not len(cur_page.lines):
+            self.pages.append(cur_page)
         return self.pages
 
 class Page:
@@ -531,7 +532,7 @@ class TextVisualizer(TppVisualizer):
 class NcursesVisualizer(TppVisualizer):
 
     def __init__(self, outputfile):
-        self.figletfont = 'standard'
+        self.figletfont = 'Half Block 7x7'
         self.lines = [[]]
         self.footer = urwid.AttrMap(urwid.Text(''), '')
         self.page_number = 0
@@ -542,12 +543,15 @@ class NcursesVisualizer(TppVisualizer):
         if input in ('q', 'Q'):
             raise urwid.ExitMainLoop()
         elif input is ' ':
-            self.cur_page += 1
-            self.content = urwid.Pile(('weight', 1, self.pages[self.cur_page]))
-            self.frame.set_body(self.content)
-            self.footer = urwid.AttrMap(urwid.Text('Slide [%s/%s]' % ((self.cur_page + 1), len(self.pages))), '')
-            self.frame.set_footer(self.footer)
-            self.loop.draw_screen()
+            if self.cur_page < len(self.pages):
+                self.cur_page += 1
+                self.content = urwid.Pile(self.pages[self.cur_page])
+                self.frame.set_body(urwid.Filler(self.content, valign='top'))
+                self.footer = urwid.AttrMap(urwid.Text('Slide [%s/%s]' % ((self.cur_page + 1), len(self.pages))), '')
+                self.frame.set_footer(self.footer)
+                self.loop.draw_screen()
+            else:
+                raise urwid.ExitMainLoop()
 
     def do_footer(self, footer_text):
         pass
@@ -632,7 +636,7 @@ class NcursesVisualizer(TppVisualizer):
         pass
 
     def do_huge(self, text):
-        pass
+        self.lines[self.page_number].append(urwid.BoxAdapter(urwid.Overlay(urwid.BigText(text, self.figletfont)), 6))
 
     def print_line(self, line):
         self.lines[self.page_number].append(('weight', 1, urwid.Text(line)))
@@ -672,13 +676,12 @@ class NcursesVisualizer(TppVisualizer):
                    ('footer', 'black', 'light gray'),
                   ]
         self.content = urwid.Pile(self.pages[0])
-        print self.content.sizing()
         self.footer = urwid.AttrMap(urwid.Text('Slide [1/%s]' % len(self.pages)), '')
- 
-        self.frame = urwid.Frame(self.content, footer=self.footer)
+
+        self.frame = urwid.Frame(urwid.Filler(self.content, valign='top'), footer=self.footer)
         self.box = urwid.LineBox(self.frame)
         self.loop = urwid.MainLoop(self.box, palette, unhandled_input=self.keyboard_input)
-        #self.loop.run()
+        self.loop.run()
 
 class TppController:
     """Implements a generic controller from which all other controllers need to be derived."""

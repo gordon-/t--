@@ -55,8 +55,8 @@ class Page:
 
     def add_line(self, line):
         """Appends a line to the page, but only if _line_ is not null"""
-        if line:
-            self.lines.append(line)
+        #if line:
+        self.lines.append(line)
 
     def next_line(self):
         """Returns the next line. In case the last line is hit, then the end-of-page marker is set."""
@@ -538,10 +538,13 @@ class NcursesVisualizer(TppVisualizer):
         self.footer = urwid.AttrMap(urwid.Text(''), '')
         self.page_number = 0
         self.cur_page = 0
+        self.ul = False
+        self.bold = False
+        self.rev = False
 
 
     def keyboard_input(self, input):
-        if input in ('q', 'Q'):
+        if input in ('q', 'Q', 'esc'):
             raise urwid.ExitMainLoop()
         elif input is ' ':
             if self.cur_page < len(self.pages):
@@ -574,28 +577,41 @@ class NcursesVisualizer(TppVisualizer):
         pass
 
     def do_horline(self):
+        self.lines[self.page_number].append(urwid.Divider('—'))
         pass
 
     def do_color(self, text):
         pass
 
     def do_exec(self, cmdline):
+        op = subprocess.Popen(cmdline, shell=True, stdout=subprocess.PIPE).stdout
+        for line in op.read().split('\n'):
+            self.print_line(line)
+        op.close()
         pass
 
     def do_wait(self):
         pass
 
     def do_beginoutput(self):
-        pass
+        if not hasattr(self, 'output'):
+            self.output = []
 
     def do_beginshelloutput(self):
-        pass
+        if not hasattr(self, 'shell_output'):
+            self.shell_output = []
 
     def do_endoutput(self):
-        pass
+        if hasattr(self, 'output'):
+            output = urwid.LineBox(urwid.Pile(self.output))
+            self.lines[self.page_number].append(output)
+            del self.output
 
     def do_endshelloutput(self):
-        pass
+        if hasattr(self, 'shell_output'):
+            output = urwid.LineBox(urwid.Pile(self.shell_output))
+            self.lines[self.page_number].append(output)
+            del self.shell_output
 
     def do_sleep(self, time2sleep):
         pass
@@ -613,10 +629,10 @@ class NcursesVisualizer(TppVisualizer):
         pass
 
     def do_ulon(self):
-        pass
+        self.ul = True
 
     def do_uloff(self):
-        pass
+        self.ul = False
 
     def do_beginslideleft(self):
         pass
@@ -634,7 +650,7 @@ class NcursesVisualizer(TppVisualizer):
         pass
 
     def do_sethugefont(self, text):
-        pass
+        self.figletfont = text
 
     def do_huge(self, text):
         #bigtext = urwid.BigText(text, self.figletfont)
@@ -648,22 +664,41 @@ class NcursesVisualizer(TppVisualizer):
         op.close()
 
     def print_line(self, line):
-        self.lines[self.page_number].append(('weight', 1, urwid.Text(line)))
+        if self.ul:
+            line = ('underline', line)
+        if self.bold:
+            line = ('bold', line)
+        if hasattr(self, 'output'):
+            self.output.append(urwid.Text(line))
+        elif hasattr(self, 'shell_output'):
+            self.shell_output.append(urwid.Text(line))
+        else:
+            self.lines[self.page_number].append(urwid.Text(line))
 
     def do_center(self, text):
-        pass
+        if hasattr(self, 'output'):
+            self.output.append(urwid.Text(text, align='center'))
+        elif hasattr(self, 'shell_output'):
+            self.shell_output.append(urwid.Text(text, align='center'))
+        else:
+            self.lines[self.page_number].append(urwid.Text(text, align='center'))
 
     def do_right(self, text):
-        pass
+        if hasattr(self, 'output'):
+            self.output.append(urwid.Text(text, align='right'))
+        elif hasattr(self, 'shell_output'):
+            self.shell_output.append(urwid.Text(text, align='right'))
+        else:
+            self.lines[self.page_number].append(urwid.Text(text, align='right'))
 
     def do_title(self, title):
-        self.lines[self.page_number].append(('weight', 1, urwid.Text(u'Titre : %s' % title)))
+        self.lines[self.page_number].append(urwid.Text(('bold', title), align='center'))
 
     def do_author(self, author):
-        self.lines[self.page_number].append(('weight', 1, urwid.Text(u'Auteur : %s' % author)))
+        self.lines[self.page_number].append(urwid.Text(('bold', author), align='center'))
 
     def do_date(self, date):
-        self.lines[self.page_number].append(('weight', 1, urwid.Text(u'Date : %s' % date)))
+        self.lines[self.page_number].append(urwid.Text(('bold', date), align='center'))
 
     def do_bgcolor(self, color):
         pass
@@ -687,7 +722,7 @@ class NcursesVisualizer(TppVisualizer):
         self.content = urwid.Pile(self.pages[0])
         self.footer = urwid.AttrMap(urwid.Text('Slide [1/%s]' % len(self.pages)), '')
 
-        self.frame = urwid.Frame(urwid.Filler(self.content, valign='top'), footer=self.footer)
+        self.frame = urwid.Frame(urwid.Filler(self.content, valign='middle'), footer=self.footer)
         self.box = urwid.LineBox(self.frame)
         self.loop = urwid.MainLoop(self.box, palette, unhandled_input=self.keyboard_input)
         self.loop.run()
@@ -744,8 +779,6 @@ if results.type == 'text' and not results.output:
 #print results
 
 visualizers = {'text':TextVisualizer, 'ncurses':NcursesVisualizer}
-
-#if results.
 
 ctrl = ConversionController(results.file, results.output, visualizers[results.type])
 ctrl.run()

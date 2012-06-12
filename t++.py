@@ -532,7 +532,8 @@ class TextVisualizer(TppVisualizer):
 class NcursesVisualizer(TppVisualizer):
 
     def __init__(self, outputfile):
-        self.figletfont = 'Half Block 7x7'
+        #self.figletfont = 'Half Block 7x7'
+        self.figletfont = 'standard'
         self.lines = [[]]
         self.footer = urwid.AttrMap(urwid.Text(''), '')
         self.page_number = 0
@@ -636,7 +637,15 @@ class NcursesVisualizer(TppVisualizer):
         pass
 
     def do_huge(self, text):
-        self.lines[self.page_number].append(urwid.BoxAdapter(urwid.Overlay(urwid.BigText(text, self.figletfont)), 6))
+        #bigtext = urwid.BigText(text, self.figletfont)
+        #bigtext = urwid.Padding(bigtext, 'left', width='clip')
+        #bigtext = urwid.Filler(bigtext, 'bottom')
+        #bigtext = urwid.BoxAdapter(bigtext, 7)
+        #self.lines[self.page_number].append(bigtext)
+        op = subprocess.Popen('figlet -C utf8 -f %s -w 200 "%s"' % (self.figletfont, text), shell=True, stdout=subprocess.PIPE).stdout
+        for line in op.read().split('\n'):
+            self.print_line(line)
+        op.close()
 
     def print_line(self, line):
         self.lines[self.page_number].append(('weight', 1, urwid.Text(line)))

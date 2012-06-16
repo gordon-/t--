@@ -27,7 +27,7 @@ class FileParser:
 
         cur_page = Page('slide %s' % (number_pages + 1))
         for line in f.readlines():
-            line = line.strip().decode('utf-8')
+            line = line.strip('\n').decode('utf-8')
             if re.match('^--##', line):
                 pass #ignore comments
             elif re.match('^--newpage', line):
@@ -767,7 +767,7 @@ class ConversionController(TppController):
 
 
 parser = argparse.ArgumentParser(description='Text Presentation Program Improved', version='%(prog)s 0.6')
-parser.add_argument('-t', '--type', action='store', dest='type', default='text', choices=('text','ncurses'), help='set filetype TYPE as output format')
+parser.add_argument('-t', '--type', action='store', dest='type', default='ncurses', choices=('text','ncurses'), help='set filetype TYPE as output format')
 parser.add_argument('-o', '--output', metavar='out-file', type=argparse.FileType('wt'), action='store', dest='output', help='write output to file OUTPUT')
 parser.add_argument('file', metavar='in-file', type=argparse.FileType('rt'), action='store', help='TPP file to show')
 

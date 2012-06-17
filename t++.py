@@ -70,7 +70,7 @@ class Page:
     def reset_eop(self):
         """Resets the end-of-page marker and sets the current line marker to the first line"""
         self.cur_line = 0
-        self.eop = false
+        self.eop = False
 
 class TppVisualizer:
     """Implements a generic visualizer from which all other visualizers need to be
@@ -546,9 +546,17 @@ class NcursesVisualizer(TppVisualizer):
     def keyboard_input(self, input):
         if input in ('q', 'Q', 'esc'):
             raise urwid.ExitMainLoop()
-        elif input is ' ':
+        elif input in (' ', 'down'):
             if self.cur_page < len(self.pages):
                 self.cur_page += 1
+                self.content = urwid.Pile(self.pages[self.cur_page])
+                self.frame.set_body(urwid.Filler(self.content, valign='top'))
+                self.footer = urwid.AttrMap(urwid.Text('Slide [%s/%s]' % ((self.cur_page + 1), len(self.pages))), '')
+                self.frame.set_footer(self.footer)
+                self.loop.draw_screen()
+        elif input is 'up':
+            if self.cur_page < len(self.pages):
+                self.cur_page -= 1
                 self.content = urwid.Pile(self.pages[self.cur_page])
                 self.frame.set_body(urwid.Filler(self.content, valign='top'))
                 self.footer = urwid.AttrMap(urwid.Text('Slide [%s/%s]' % ((self.cur_page + 1), len(self.pages))), '')

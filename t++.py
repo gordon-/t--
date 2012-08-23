@@ -1,5 +1,7 @@
 #coding=UTF-8
 
+# Ohai!
+
 import urwid
 import sys
 import re

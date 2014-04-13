@@ -148,7 +148,7 @@ class TextVisualizer(TppVisualizer):
     def do_center(self, text):
         lines = self.split_lines(text, self.width)
         for line in lines:
-            spaces = (self.width - len(line)) / 2
+            spaces = int((self.width - len(line)) / 2)
             if spaces < 0:
                 spaces = 0
             for i in range(spaces):
